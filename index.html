@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organigrama Interactivo M54</title>
+    <title>GOCE-GeOn</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -203,12 +203,12 @@
             <div>
                 <!-- Editable Chart Title -->
                 <div class="flex items-center gap-2">
-                    <h1 id="chartTitleText" class="font-bold text-lg text-slate-900 tracking-tight">Organigrama Interactivo del Proyecto</h1>
+                    <h1 id="chartTitleText" class="font-bold text-lg text-slate-900 tracking-tight">GeOn</h1>
                     <button id="editTitleBtn" onclick="openTitleEditModal()" class="hidden text-slate-400 hover:text-indigo-600 transition text-xs" title="Editar Título del Organigrama">
                         <i class="fa-solid fa-pen"></i>
                     </button>
                 </div>
-                <p class="text-xs text-slate-500 font-medium">Jerarquía Horizontal, Secciones/Comités, Grupos e Integrantes</p>
+                <p class="text-xs text-slate-500 font-medium">Organigrama Interactivo</p>
             </div>
         </div>
 
@@ -221,16 +221,16 @@
                 <i class="fa-solid fa-magnifying-glass-minus"></i>
             </button>
             <button onclick="resetZoom()" class="px-3 py-2 rounded-lg bg-white/80 hover:bg-indigo-50 border border-slate-200 text-slate-700 text-xs font-semibold shadow-sm transition">
-                Restablecer Vista
+                Ajustar
             </button>
             <div class="h-6 w-px bg-slate-200 mx-1"></div>
             <button onclick="toggleViewMode()" id="viewModeBtn" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md transition flex items-center space-x-1.5">
                 <i class="fa-solid fa-list-tree"></i>
-                <span id="viewModeText">Vista de Lista / Detalles</span>
+                <span id="viewModeText">Vista</span>
             </button>
             <button onclick="togglePresentationMode()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-md transition flex items-center space-x-1.5" title="Modo Presentación (Tecla F)">
                 <i class="fa-solid fa-expand"></i>
-                <span class="hidden sm:inline">Presentación</span>
+                <span class="hidden sm:inline">Presentar</span>
             </button>
             <!-- Discrete Star Button Trigger -->
             <button id="starToggleBtn" class="text-slate-400 hover:text-amber-500 focus:outline-none transition-colors p-2 text-lg" title="Panel de Edición">
@@ -243,7 +243,7 @@
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2">
                 <span class="text-xs uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Panel de Edición
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Edición
                 </span>
             </div>
             
@@ -255,16 +255,16 @@
                     <i class="fa-solid fa-floppy-disk text-emerald-400"></i> Guardar
                 </button>
                 <button id="btnEditar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-pen-to-square text-amber-400"></i> Modo Edición: <span id="editModeStatus">DESACTIVADO</span>
+                    <i class="fa-solid fa-pen-to-square text-amber-400"></i> Edición: <span id="editModeStatus">X</span>
                 </button>
                 <button id="btnDescargar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-download text-indigo-400"></i> Descargar
+                    <i class="fa-solid fa-download text-indigo-400"></i> Exportar
                 </button>
                 <button id="btnCargar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-upload text-purple-400"></i> Cargar
+                    <i class="fa-solid fa-upload text-purple-400"></i> Importar
                 </button>
                 <button id="btnRestaurar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-rotate-left text-orange-400"></i> Restaurar
+                    <i class="fa-solid fa-rotate-left text-orange-400"></i> Restablecer
                 </button>
                 <button id="btnBorrar" class="px-3 py-1.5 bg-slate-800 hover:bg-red-900/50 text-red-300 rounded-lg flex items-center gap-1.5 transition">
                     <i class="fa-solid fa-trash-can text-red-400"></i> Borrar
@@ -278,7 +278,7 @@
         
         <!-- Visible Title Banner for Presentation & Printing -->
         <div id="presentationHeaderTitle" class="mb-6 text-center w-full sticky left-0 right-0">
-            <h1 id="presentationTitleText" class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Organigrama Interactivo del Proyecto</h1>
+            <h1 id="presentationTitleText" class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Organigrama Interactivo</h1>
         </div>
 
         <!-- Interactive Canvas Wrapper -->
@@ -291,7 +291,7 @@
         <!-- Alternative List View Container -->
         <div id="listViewContainer" class="hidden w-full max-w-4xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-10">
             <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center">
-                <i class="fa-solid fa-list-check text-indigo-600 mr-3"></i> Vista de Lista y Detalle Jerárquico
+                <i class="fa-solid fa-list-check text-indigo-600 mr-3"></i> Vista de Lista
             </h2>
             <div class="space-y-4" id="detailedListContent">
                 <!-- Dynamically populated -->
@@ -305,11 +305,11 @@
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                    <i class="fa-solid fa-plus-circle text-indigo-600"></i> Agregar Elemento Subordinado
+                    <i class="fa-solid fa-plus-circle text-indigo-600"></i> Agregar
                 </h3>
                 <button id="closeAddTypeBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-500">Selecciona el tipo de nodo a agregar:</p>
+            <p class="text-xs text-slate-500">Seleccionar tipo:</p>
             <div id="addOptionsContainer" class="space-y-2">
                 <button onclick="confirmAddChild('section')" class="w-full p-3 bg-slate-50 hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-xl flex items-center gap-3 text-left transition group">
                     <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm group-hover:bg-purple-600 group-hover:text-white transition">
