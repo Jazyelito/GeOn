@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organigrama Interactivo M54</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for professional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- GSAP for smooth animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #f8fafc, #e2e8f0);
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .org-tree ul {
+            padding-top: 20px;
+            position: relative;
+            transition: all 0.5s;
+            display: flex;
+            justify-content: center;
+        }
+
+        .org-tree li {
+            float: left;
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 20px 12px 0 12px;
+            transition: all 0.5s;
+        }
+
+        /* Connector Lines using pseudo-elements */
+        .org-tree li::before, .org-tree li::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 50%;
+            border-top: 2px solid #cbd5e1;
+            width: 50%;
+            height: 20px;
+        }
+
+        .org-tree li::after {
+            right: auto;
+            left: 50%;
+            border-left: 2px solid #cbd5e1;
+        }
+
+        .org-tree li:only-child::after, .org-tree li:only-child::before {
+            display: none;
+        }
+
+        .org-tree li:only-child {
+            padding-top: 0;
+        }
+
+        .org-tree li:first-child::before, .org-tree li:last-child::after {
+            border: 0 none;
+        }
+
+        .org-tree li:last-child::before {
+            border-right: 2px solid #cbd5e1;
+            border-radius: 0 8px 0 0;
+        }
+
+        .org-tree li:first-child::after {
+            border-radius: 8px 0 0 0;
+        }
+
+        .org-tree ul ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-left: 2px solid #cbd5e1;
+            width: 0;
+            height: 20px;
+        }
+
+        .node-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .node-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Focused Navigation Card state (clean glow without default focus rectangle/outline) */
+        .node-card.focused-node, .group-container.focused-node {
+            outline: none !important;
+            border-color: #6366f1 !important;
+            transform: scale(1.06) translateY(-4px);
+            z-index: 30 !important;
+            box-shadow: 0 0 25px 4px rgba(99, 102, 241, 0.45), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .group-container {
+            border: 2px dashed #38bdf8;
+            background: rgba(240, 249, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Presentation Mode Styles */
+        body.presentation-mode header,
+        body.presentation-mode #editorDrawer,
+        body.presentation-mode #starToggleBtn {
+            display: none !important;
+        }
+
+        body.presentation-mode {
+            background: #0f172a !important;
+            color: #f8fafc;
+        }
+
+        /* Fixed Presentation Title styling to guarantee visibility in Dark Presentation mode */
+        body.presentation-mode #presentationHeaderTitle {
+            display: block !important;
+        }
+
+        body.presentation-mode #presentationHeaderTitle #presentationTitleText {
+            color: #f8fafc !important;
+        }
+
+        body.presentation-mode .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            border-color: rgba(51, 65, 85, 0.8);
+            color: #f8fafc;
+        }
+
+        body.presentation-mode .node-card p.text-slate-900 {
+            color: #f8fafc !important;
+        }
+
+        body.presentation-mode .org-tree li::before, 
+        body.presentation-mode .org-tree li::after,
+        body.presentation-mode .org-tree ul ul::before {
+            border-color: #475569 !important;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-full overflow-hidden text-slate-800" id="mainBody">
+
+    <header class="glass-panel sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md">
+                <i class="fa-solid fa-sitemap text-lg"></i>
+            </div>
+            <div>
+                <!-- Editable Chart Title -->
+                <div class="flex items-center gap-2">
+                    <h1 id="chartTitleText" class="font-bold text-lg text-slate-900 tracking-tight">Organigrama Interactivo del Proyecto</h1>
+                    <button id="editTitleBtn" onclick="openTitleEditModal()" class="hidden text-slate-400 hover:text-indigo-600 transition text-xs" title="Editar Título del Organigrama">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 font-medium">Jerarquía Horizontal, Secciones/Comités, Grupos e Integrantes</p>
+            </div>
+        </div>
+
+        <!-- Controls Toolbar -->
+        <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+            <button onclick="zoomIn()" class="p-2 rounded-lg bg-white/80 hover:bg-indigo-50 border border-slate-200 text-slate-700 shadow-sm transition" title="Acercar">
+                <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+            <button onclick="zoomOut()" class="p-2 rounded-lg bg-white/80 hover:bg-indigo-50 border border-slate-200 text-slate-700 shadow-sm transition" title="Alejar">
+                <i class="fa-solid fa-magnifying-glass-minus"></i>
+            </button>
+            <button onclick="resetZoom()" class="px-3 py-2 rounded-lg bg-white/80 hover:bg-indigo-50 border border-slate-200 text-slate-700 text-xs font-semibold shadow-sm transition">
+                Restablecer Vista
+            </button>
+            <div class="h-6 w-px bg-slate-200 mx-1"></div>
+            <button onclick="toggleViewMode()" id="viewModeBtn" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-list-tree"></i>
+                <span id="viewModeText">Vista de Lista / Detalles</span>
+            </button>
+            <button onclick="togglePresentationMode()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-md transition flex items-center space-x-1.5" title="Modo Presentación (Tecla F)">
+                <i class="fa-solid fa-expand"></i>
+                <span class="hidden sm:inline">Presentación</span>
+            </button>
+            <!-- Discrete Star Button Trigger -->
+            <button id="starToggleBtn" class="text-slate-400 hover:text-amber-500 focus:outline-none transition-colors p-2 text-lg" title="Panel de Edición">
+                <i class="fa-solid fa-star"></i>
+            </button>
+        </div>
+    </header>
+
+    <div id="editorDrawer" class="hidden bg-slate-900 text-white px-6 py-3 border-b border-slate-800 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-xs uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Panel de Edición
+                </span>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 text-xs">
+                <button id="btnInfo" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-circle-info text-sky-400"></i> Info
+                </button>
+                <button id="btnGuardar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-floppy-disk text-emerald-400"></i> Guardar
+                </button>
+                <button id="btnEditar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-pen-to-square text-amber-400"></i> Modo Edición: <span id="editModeStatus">DESACTIVADO</span>
+                </button>
+                <button id="btnDescargar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-download text-indigo-400"></i> Descargar
+                </button>
+                <button id="btnCargar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-upload text-purple-400"></i> Cargar
+                </button>
+                <button id="btnRestaurar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-rotate-left text-orange-400"></i> Restaurar
+                </button>
+                <button id="btnBorrar" class="px-3 py-1.5 bg-slate-800 hover:bg-red-900/50 text-red-300 rounded-lg flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-trash-can text-red-400"></i> Borrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE CONTAINER -->
+    <main class="flex-1 relative overflow-auto p-6 md:p-12 block" id="workspaceContainer">
+        
+        <!-- Visible Title Banner for Presentation & Printing -->
+        <div id="presentationHeaderTitle" class="mb-6 text-center w-full sticky left-0 right-0">
+            <h1 id="presentationTitleText" class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Organigrama Interactivo del Proyecto</h1>
+        </div>
+
+        <!-- Interactive Canvas Wrapper -->
+        <div id="chartCanvas" class="transition-transform duration-300 origin-top-left inline-block min-w-max p-16 pb-64">
+            <div id="treeContainer" class="org-tree inline-block">
+                <!-- Dynamic tree structure -->
+            </div>
+        </div>
+
+        <!-- Alternative List View Container -->
+        <div id="listViewContainer" class="hidden w-full max-w-4xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-10">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                <i class="fa-solid fa-list-check text-indigo-600 mr-3"></i> Vista de Lista y Detalle Jerárquico
+            </h2>
+            <div class="space-y-4" id="detailedListContent">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modals -->
+    <div id="addTypeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-indigo-600"></i> Agregar Elemento Subordinado
+                </h3>
+                <button id="closeAddTypeBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500">Selecciona el tipo de nodo a agregar:</p>
+            <div id="addOptionsContainer" class="space-y-2">
+                <button onclick="confirmAddChild('section')" class="w-full p-3 bg-slate-50 hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-xl flex items-center gap-3 text-left transition group">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm group-hover:bg-purple-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-building-user"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs">Sección / Comité</h4>
+                        <p class="text-[11px] text-slate-500">Tarjeta para una junta, comité u órgano de decisión.</p>
+                    </div>
+                </button>
+                <button onclick="confirmAddChild('group')" class="w-full p-3 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl flex items-center gap-3 text-left transition group">
+                    <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm group-hover:bg-sky-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs">Grupo de Trabajo</h4>
+                        <p class="text-[11px] text-slate-500">Contenedor colectivo de tarjetas individuales.</p>
+                    </div>
+                </button>
+                <button onclick="confirmAddChild('individual')" class="w-full p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl flex items-center gap-3 text-left transition group">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm group-hover:bg-indigo-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs">Persona / Integrante</h4>
+                        <p class="text-[11px] text-slate-500">Tarjeta individual para un colaborador o puesto.</p>
+                    </div>
+                </button>
+                <button onclick="confirmAddChild('blank')" class="w-full p-3 bg-slate-50 hover:bg-slate-200 border border-slate-200 hover:border-slate-400 rounded-xl flex items-center gap-3 text-left transition group">
+                    <div class="w-8 h-8 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm group-hover:bg-slate-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-square-dash"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs">Tarjeta en Blanco</h4>
+                        <p class="text-[11px] text-slate-500">Espacio reservado / puesto vacante o por definir.</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="nodeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-lg">Editar Tarjeta</h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="nodeForm" class="space-y-3">
+                
+                <div id="typeSelectorGroup" class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Elemento</label>
+                    <select id="nodeTypeSelect" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="section">Sección / Comité</option>
+                        <option value="group">Grupo de Trabajo</option>
+                        <option value="individual">Persona / Integrante</option>
+                        <option value="blank">Tarjeta en Blanco</option>
+                    </select>
+                </div>
+
+                <!-- Group Specific Settings -->
+                <div id="groupSettingsSection" class="hidden bg-sky-50 p-3 rounded-xl border border-sky-200 space-y-2">
+                    <span class="block text-xs font-bold text-sky-800 uppercase">Configuración de Grupo</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Orientación</label>
+                            <select id="nodeGroupOrientation" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white">
+                                <option value="horizontal">Horizontal (Fila)</option>
+                                <option value="vertical">Vertical (Columna)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Orden de Integrantes</label>
+                            <select id="nodeGroupSortBy" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white">
+                                <option value="none">Manual / Sin Orden</option>
+                                <option value="name">Por Nombre (A-Z)</option>
+                                <option value="role">Por Cargo / Puesto (A-Z)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="parentSelectorGroup" class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <label class="block text-xs font-semibold text-indigo-700 uppercase mb-1">Subordinado a (Superior)</label>
+                    <select id="nodeParentSelect" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+
+                <!-- Icon Selection Option -->
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ícono Personalizado (FontAwesome)</label>
+                    <select id="nodeIconSelect" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">Por defecto según el tipo</option>
+                        <option value="fa-sitemap">Jerarquía / Árbol (fa-sitemap)</option>
+                        <option value="fa-earth-americas">Tierra / Global (fa-earth-americas)</option>
+                        <option value="fa-globe">Mundo / Región (fa-globe)</option>
+                        <option value="fa-map-location-dot">Ubicación / Mapa (fa-map-location-dot)</option>
+                        <option value="fa-crown">Corona / Liderazgo (fa-crown)</option>
+                        <option value="fa-users-rectangle">Junta / Consejo (fa-users-rectangle)</option>
+                        <option value="fa-user-tie">Director / Ejecutivo (fa-user-tie)</option>
+                        <option value="fa-shield-halved">Escudo / Guías Mayores (fa-shield-halved)</option>
+                        <option value="fa-user-gear">Equipo Técnico / Soporte (fa-user-gear)</option>
+                        <option value="fa-people-group">Unidades / Grupo (fa-people-group)</option>
+                        <option value="fa-handshake-angle">Consejero / Tutor (fa-handshake-angle)</option>
+                        <option value="fa-flag">Bandera / Capitán (fa-flag)</option>
+                        <option value="fa-award">Insignia / Investido (fa-award)</option>
+                        <option value="fa-user-plus">Aspirante / Miembro (fa-user-plus)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nivel y Estatus</label>
+                    <input type="text" id="nodeLevelTitle" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required placeholder="NIVEL 1 • MÁXIMA AUTORIDAD">
+                </div>
+
+                <div>
+                    <label id="nameLabel" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nombre Completo / Título</label>
+                    <input type="text" id="nodeName" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                </div>
+
+                <div>
+                    <label id="roleLabel" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cargo / Puesto</label>
+                    <input type="text" id="nodeRole" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Director Mundial">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nivel Institucional / Ubicación</label>
+                    <input type="text" id="nodeInstLevel" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required placeholder="Matriz General (Sede Mundial)">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Descripción del Rol (Popup)</label>
+                    <textarea id="nodeDescription" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Descripción detallada de responsabilidades..."></textarea>
+                </div>
+
+                <div id="photoField">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotografía / Logotipo</label>
+                    <input type="file" id="nodePhotoInput" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t">
+                    <button type="button" id="cancelModalBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="titleModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Editar Título del Organigrama</h3>
+                <button id="closeTitleModalBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nuevo Título</label>
+                <input type="text" id="chartTitleInput" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Nombre del Organigrama">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" id="cancelTitleModalBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancelar</button>
+                <button type="button" onclick="saveChartTitle()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm">Guardar Título</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailsPopupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm hidden transition-opacity opacity-0">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform" id="detailsModalCard">
+            <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 flex items-center justify-between text-white">
+                <div class="flex items-center space-x-3">
+                    <div id="popupModalIcon" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <div>
+                        <span id="popupModalBadge" class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">INFORMACIÓN</span>
+                        <h3 id="popupModalTitle" class="font-bold text-lg leading-tight mt-0.5">Título del Elemento</h3>
+                    </div>
+                </div>
+                <button onclick="closeDetailsPopup()" class="text-white/80 hover:text-white p-2 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Descripción / Detalles del Rol</h4>
+                    <p id="popupModalDescription" class="text-slate-700 text-sm leading-relaxed">Sin descripción cargada.</p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Responsables / Información de Ficha</h4>
+                    <div id="popupModalMembers" class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 space-y-2">
+                        <!-- Dynamic details -->
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-between items-center">
+                <button id="popupBlankCustomBtn" onclick="openEditModalFromPopup()" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-semibold text-xs transition flex items-center gap-1 hidden">
+                    <i class="fa-solid fa-pen"></i> Editar este Popup
+                </button>
+                <button onclick="closeDetailsPopup()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-sm transition ml-auto">
+                    Cerrar Detalle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center gap-3 text-indigo-600 border-b pb-3">
+                <i class="fa-solid fa-circle-info text-2xl"></i>
+                <h3 class="font-bold text-slate-800 text-lg">Información y Atajos de Teclado</h3>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+                Controles e interacción en vivo:
+            </p>
+            <ul class="text-xs text-slate-600 list-disc list-inside space-y-1.5">
+                <li><b>Flechas Izquierda / Derecha (← →):</b> Desplazan únicamente entre tarjetas laterales continuas del mismo nivel superior.</li>
+                <li><b>Flechas Arriba / Abajo (↑ ↓):</b> Suben al jefe directo o bajan a los subordinados directos.</li>
+                <li><b>Tecla ENTER:</b> Abre la tarjeta en foco. Presionar de nuevo la cierra.</li>
+                <li><b>Tecla L:</b> Alterna entre la Vista de Organigrama y Vista de Lista.</li>
+                <li><b>Tecla F / ESC:</b> Entra o sale del Modo Presentación Pantalla Completa.</li>
+                <li><b>Modo Edición:</b> Los botones para modificar sólo son visibles al activar "Modo Edición" en el menú estrella.</li>
+            </ul>
+            <div class="text-right pt-2">
+                <button id="closeInfoBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileLoaderInput" accept=".json" class="hidden">
+
+    <script>
+        const defaultData = {
+            chartTitle: "Organigrama Interactivo del Proyecto",
+            id: "sec-1",
+            type: "section",
+            icon: "fa-earth-americas",
+            levelTitle: "NIVEL 1 • MÁXIMA AUTORIDAD MUNDIAL",
+            name: "Junta Directiva Internacional",
+            role: "Órgano de Gobierno General",
+            institutionalLevel: "Matriz General (Sede Mundial)",
+            description: "Representa el máximo liderazgo mundial de los Ministerios Juveniles, guiando las políticas e iniciativas internacionales.",
+            photo: "",
+            children: [
+                {
+                    id: "grp-1",
+                    type: "group",
+                    icon: "fa-users-rectangle",
+                    levelTitle: "NIVEL 2 • GRUPO DIRECTIVO OPERATIVO",
+                    name: "Comité de Dirección Ejecutiva",
+                    role: "Gestión Operativa y Estratégica",
+                    institutionalLevel: "Oficina Regional (Sede Central)",
+                    description: "Equipo directivo a cargo de la ejecución operativa, capacitaciones y soporte de unidades.",
+                    photo: "",
+                    groupOrientation: "horizontal",
+                    groupSortBy: "none",
+                    members: [
+                        {
+                            id: "ind-1",
+                            type: "individual",
+                            icon: "fa-user-tie",
+                            levelTitle: "NIVEL 3 • DIRECTOR GENERAL",
+                            name: "Carlos Mendoza",
+                            role: "Director General Operativo",
+                            institutionalLevel: "Sucursal Central (Sede Norte)",
+                            description: "Coordinación y gestión directa de las actividades y equipos de trabajo.",
+                            photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80"
+                        },
+                        {
+                            id: "ind-2",
+                            type: "individual",
+                            icon: "fa-user-gear",
+                            levelTitle: "NIVEL 3 • COORDINACIÓN OPERATIVA",
+                            name: "Elena Rostova",
+                            role: "Coordinadora de Operaciones",
+                            institutionalLevel: "Sucursal Operativa (Sede Este)",
+                            description: "Supervisión de logística, enlaces y registros generales.",
+                            photo: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150&auto=format&fit=crop&q=80"
+                        }
+                    ],
+                    children: [
+                        {
+                            id: "ind-3",
+                            type: "individual",
+                            icon: "fa-handshake-angle",
+                            levelTitle: "NIVEL 4 • AUXILIAR DE CAMPO",
+                            name: "Roberto Gómez",
+                            role: "Asistente de Logística",
+                            institutionalLevel: "Sucursal Operativa (Sede Este)",
+                            description: "Apoyo en actividades de campo y mentoría directa.",
+                            photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+                            children: []
+                        }
+                    ]
+                }
+            ]
+        };
+
+        let currentData = JSON.parse(JSON.stringify(defaultData));
+        let editMode = false;
+        let activeNodeId = null;
+        let selectedParentToAdd = null;
+        let currentZoom = 1;
+        let isListView = false;
+        let currentPopupNodeId = null;
+        let isPresentationMode = false;
+        let currentFocusedId = null;
+
+        const starToggleBtn = document.getElementById('starToggleBtn');
+        const editorDrawer = document.getElementById('editorDrawer');
+        const treeContainer = document.getElementById('treeContainer');
+        const nodeModal = document.getElementById('nodeModal');
+        const addTypeModal = document.getElementById('addTypeModal');
+        const infoModal = document.getElementById('infoModal');
+        const nodeForm = document.getElementById('nodeForm');
+        const fileLoaderInput = document.getElementById('fileLoaderInput');
+        const parentSelectorGroup = document.getElementById('parentSelectorGroup');
+        const nodeParentSelect = document.getElementById('nodeParentSelect');
+        const nodeTypeSelect = document.getElementById('nodeTypeSelect');
+        const nodeIconSelect = document.getElementById('nodeIconSelect');
+        const editTitleBtn = document.getElementById('editTitleBtn');
+        const chartTitleText = document.getElementById('chartTitleText');
+        const presentationTitleText = document.getElementById('presentationTitleText');
+
+        starToggleBtn.addEventListener('click', () => {
+            editorDrawer.classList.toggle('hidden');
+        });
+
+        function createCardHtml(node) {
+            const nodeType = node.type || 'individual';
+            let typeIcon = node.icon || "fa-shield-halved";
+            let borderStyle = "border-l-4 border-indigo-600";
+            let badgeBg = "bg-indigo-50 text-indigo-700";
+            let avatarHtml = '';
+
+            if (nodeType === 'blank') {
+                if (!node.icon) typeIcon = "fa-square-dash";
+                borderStyle = "border-l-4 border-slate-400";
+                badgeBg = "bg-slate-100 text-slate-600";
+                avatarHtml = `
+                    <div class="w-12 h-12 flex-shrink-0 rounded-xl bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-lg font-bold">
+                        <i class="fa-solid ${typeIcon}"></i>
+                    </div>
+                `;
+            } else if (nodeType === 'section') {
+                if (!node.icon) typeIcon = "fa-building-user";
+                borderStyle = "border-l-4 border-purple-600";
+                badgeBg = "bg-purple-50 text-purple-800";
+                avatarHtml = `
+                    <div class="w-12 h-12 flex-shrink-0 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid ${typeIcon}"></i>
+                    </div>
+                `;
+            } else if (nodeType === 'group') {
+                if (!node.icon) typeIcon = "fa-users";
+                borderStyle = "border-l-4 border-sky-600";
+                badgeBg = "bg-sky-50 text-sky-800";
+                avatarHtml = `
+                    <div class="w-12 h-12 flex-shrink-0 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid ${typeIcon}"></i>
+                    </div>
+                `;
+            } else {
+                if (!node.icon) typeIcon = "fa-user";
+                const avatarSrc = node.photo || "https://placehold.co/100x100/e2e8f0/64748b?text=Foto";
+                avatarHtml = `
+                    <div class="relative w-12 h-12 flex-shrink-0">
+                        <img src="${avatarSrc}" alt="${node.name}" class="w-12 h-12 rounded-xl object-cover border border-indigo-100 shadow-sm">
+                    </div>
+                `;
+            }
+
+            return `
+                <div id="card-${node.id}" data-node-id="${node.id}" class="node-card glass-panel rounded-2xl p-4 ${borderStyle} shadow-lg cursor-pointer w-80 text-left relative group inline-flex items-center gap-3" onclick="handleCardClick(event, '${node.id}')">
+                    ${avatarHtml}
+                    <div class="flex-1 min-w-0 pr-6">
+                        <div class="flex items-center gap-1.5 text-[10px] font-bold ${badgeBg} px-2 py-0.5 rounded-full mb-1 w-fit">
+                            <i class="fa-solid ${typeIcon}"></i>
+                            <span class="truncate">${node.levelTitle || 'VACANTE / PENDIENTE'}</span>
+                        </div>
+                        <p class="font-bold text-slate-900 text-sm truncate">${node.name || '[Sin Asignar]'}</p>
+                        <p class="text-xs text-indigo-600 font-medium truncate">${node.role || 'Puesto Vacante'}</p>
+                        <p class="text-[11px] text-slate-500 truncate mt-0.5">${node.institutionalLevel || 'Por definir'}</p>
+                    </div>
+                    ${editMode ? `
+                        <div class="absolute top-2 right-2 flex flex-col gap-1 z-20" onclick="event.stopPropagation()">
+                            <button onclick="openEditModal('${node.id}')" class="p-1 bg-amber-500 text-white rounded text-[10px] hover:bg-amber-600 shadow" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            ${nodeType !== 'group' ? `
+                                <button onclick="promptAddChild('${node.id}')" class="p-1 bg-emerald-500 text-white hover:bg-emerald-600 text-[10px] rounded shadow" title="Agregar Subordinado">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            ` : ''}
+                            <button onclick="deleteNode('${node.id}')" class="p-1 bg-red-500 text-white hover:bg-red-600 text-[10px] rounded shadow" title="Eliminar Nodo">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    ` : `
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full font-semibold absolute top-2 right-2"><i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    `}
+                </div>
+            `;
+        }
+
+        function sortMembers(members, sortBy) {
+            if (!members || !Array.isArray(members)) return [];
+            const sorted = [...members];
+            if (sortBy === 'name') {
+                sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            } else if (sortBy === 'role') {
+                sorted.sort((a, b) => (a.role || '').localeCompare(b.role || ''));
+            }
+            return sorted;
+        }
+
+        function renderTree(node) {
+            if (!node) return document.createElement('div');
+            
+            const ul = document.createElement('ul');
+            const li = document.createElement('li');
+
+            if (node.type === 'group') {
+                const groupWrapper = document.createElement('div');
+                groupWrapper.id = `card-${node.id}`;
+                groupWrapper.setAttribute('data-node-id', node.id);
+                groupWrapper.className = "group-container inline-block text-center relative cursor-pointer hover:shadow-xl transition-all";
+                groupWrapper.setAttribute('onclick', `handleCardClick(event, '${node.id}')`);
+                
+                const orientation = node.groupOrientation || 'horizontal';
+                const sortBy = node.groupSortBy || 'none';
+
+                const groupHeader = document.createElement('div');
+                groupHeader.className = "flex items-center justify-between mb-3 text-xs font-bold text-sky-900 bg-sky-100/90 px-3 py-1.5 rounded-xl border border-sky-200 shadow-sm gap-2";
+                
+                let controlsHtml = '';
+                if (editMode) {
+                    controlsHtml = `
+                        <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                            <button onclick="toggleGroupOrientation('${node.id}')" class="p-1 bg-sky-600 text-white rounded text-[10px] hover:bg-sky-700" title="Cambiar Orientación (${orientation})">
+                                <i class="fa-solid ${orientation === 'horizontal' ? 'fa-arrows-left-right' : 'fa-arrows-up-down'}"></i>
+                            </button>
+                            <button onclick="cycleGroupSort('${node.id}')" class="p-1 bg-sky-600 text-white rounded text-[10px] hover:bg-sky-700" title="Orden: ${sortBy}">
+                                <i class="fa-solid fa-arrow-down-a-z"></i>
+                            </button>
+                            <button onclick="openEditModal('${node.id}')" class="p-1 bg-amber-500 text-white rounded text-[10px]" title="Editar Grupo"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="promptAddGroupMember('${node.id}')" class="p-1 bg-indigo-500 text-white rounded text-[10px]" title="Agregar Miembro al Grupo"><i class="fa-solid fa-user-plus"></i></button>
+                            <button onclick="promptAddChild('${node.id}')" class="p-1 bg-emerald-500 text-white rounded text-[10px]" title="Subordinar al Grupo Completo"><i class="fa-solid fa-plus"></i></button>
+                            <button onclick="deleteNode('${node.id}')" class="p-1 bg-red-500 text-white rounded text-[10px]" title="Eliminar Grupo"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `;
+                } else {
+                    controlsHtml = `<span class="text-[10px] text-sky-700 bg-sky-200/60 px-2 py-0.5 rounded-full font-medium">Ver detalles</span>`;
+                }
+
+                groupHeader.innerHTML = `
+                    <span class="flex items-center gap-1.5"><i class="fa-solid ${node.icon || 'fa-users'}"></i> ${node.name}</span>
+                    ${controlsHtml}
+                `;
+                groupWrapper.appendChild(groupHeader);
+
+                const membersDiv = document.createElement('div');
+                const flexLayoutClass = orientation === 'vertical' ? 'flex-col items-center' : 'flex-row flex-wrap justify-center';
+                membersDiv.className = `flex ${flexLayoutClass} gap-3`;
+                
+                let displayMembers = node.members || [];
+                if (sortBy !== 'none') {
+                    displayMembers = sortMembers(displayMembers, sortBy);
+                }
+
+                if (displayMembers.length > 0) {
+                    displayMembers.forEach(member => {
+                        const mCard = document.createElement('div');
+                        mCard.innerHTML = createCardHtml(member);
+                        membersDiv.appendChild(mCard.firstElementChild);
+                    });
+                } else {
+                    membersDiv.innerHTML = `<span class="text-xs text-sky-600 italic p-2">Grupo sin miembros individuales</span>`;
+                }
+                
+                groupWrapper.appendChild(membersDiv);
+                li.appendChild(groupWrapper);
+
+            } else {
+                const cardDiv = document.createElement('div');
+                cardDiv.innerHTML = createCardHtml(node);
+                li.appendChild(cardDiv.firstElementChild);
+            }
+
+            if (node.children && node.children.length > 0) {
+                const childrenUl = document.createElement('ul');
+                node.children.forEach(child => {
+                    const childLi = renderTree(child);
+                    childrenUl.appendChild(childLi.firstElementChild);
+                });
+                li.appendChild(childrenUl);
+            }
+
+            ul.appendChild(li);
+            return ul;
+        }
+
+        function refreshView(maintainScroll = false) {
+            const workspace = document.getElementById('workspaceContainer');
+            const prevScrollTop = workspace ? workspace.scrollTop : 0;
+            const prevScrollLeft = workspace ? workspace.scrollLeft : 0;
+
+            // Update Title across header and presentation mode
+            const titleVal = currentData ? (currentData.chartTitle || "Organigrama Interactivo del Proyecto") : "Organigrama Interactivo del Proyecto";
+            chartTitleText.innerText = titleVal;
+            presentationTitleText.innerText = titleVal;
+
+            if (editMode) {
+                editTitleBtn.classList.remove('hidden');
+            } else {
+                editTitleBtn.classList.add('hidden');
+            }
+
+            treeContainer.innerHTML = '';
+            if (!currentData || Object.keys(currentData).length === 0) {
+                treeContainer.innerHTML = `
+                    <div class="text-center p-8 bg-white/90 backdrop-blur-md border border-dashed border-slate-300 rounded-2xl max-w-sm mx-auto shadow-sm">
+                        <p class="text-slate-500 text-sm mb-4">No hay estructura cargada.</p>
+                        ${editMode ? `<button onclick="confirmAddChild('section')" class="px-4 py-2 bg-indigo-600 text-white text-xs rounded-xl font-bold shadow-md hover:bg-indigo-700 transition">Crear Sección Raíz</button>` : ''}
+                    </div>
+                `;
+                return;
+            }
+            treeContainer.appendChild(renderTree(currentData).firstElementChild);
+            
+            if (!currentFocusedId && currentData) {
+                currentFocusedId = currentData.id;
+            }
+            
+            if (isListView) populateDetailedList();
+            highlightFocusedNode(maintainScroll);
+
+            if (maintainScroll && workspace) {
+                workspace.scrollTop = prevScrollTop;
+                workspace.scrollLeft = prevScrollLeft;
+            }
+        }
+
+        function highlightFocusedNode(preventScroll = false) {
+            document.querySelectorAll('.focused-node').forEach(el => el.classList.remove('focused-node'));
+            if (!currentFocusedId) return;
+
+            const el = document.getElementById(`card-${currentFocusedId}`);
+            if (el) {
+                el.classList.add('focused-node');
+                if (!preventScroll) {
+                    scrollToFocusedNode(el);
+                }
+            }
+        }
+
+        function scrollToFocusedNode(targetEl) {
+            const workspace = document.getElementById('workspaceContainer');
+            if (!workspace || !targetEl) return;
+
+            const targetRect = targetEl.getBoundingClientRect();
+            const containerRect = workspace.getBoundingClientRect();
+
+            // Calculate offset relative to the scroll container
+            const targetCenterX = targetRect.left + (targetRect.width / 2) - containerRect.left + workspace.scrollLeft;
+            const targetCenterY = targetRect.top + (targetRect.height / 2) - containerRect.top + workspace.scrollTop;
+
+            const desiredScrollLeft = targetCenterX - (containerRect.width / 2);
+            const desiredScrollTop = targetCenterY - (containerRect.height / 2);
+
+            workspace.scrollTo({
+                left: Math.max(0, desiredScrollLeft),
+                top: Math.max(0, desiredScrollTop),
+                behavior: 'smooth'
+            });
+        }
+
+        function findNode(node, id) {
+            if (!node) return null;
+            if (node.id === id) return node;
+            if (node.members) {
+                let m = node.members.find(x => x.id === id);
+                if (m) return m;
+            }
+            if (node.children) {
+                for (let child of node.children) {
+                    let found = findNode(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function findParentNode(root, targetId) {
+            if (!root) return null;
+            if (root.members && root.members.some(m => m.id === targetId)) return root;
+            if (!root.children) return null;
+            for (let child of root.children) {
+                if (child.id === targetId) return root;
+                let found = findParentNode(child, targetId);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function getAllNodesList(node, list = []) {
+            if (!node) return list;
+            list.push({ id: node.id, name: node.name, type: node.type || 'individual' });
+            if (node.members) {
+                node.members.forEach(m => list.push({ id: m.id, name: m.name, type: m.type || 'individual' }));
+            }
+            if (node.children) {
+                node.children.forEach(c => getAllNodesList(c, list));
+            }
+            return list;
+        }
+
+        function toggleGroupOrientation(groupId) {
+            const group = findNode(currentData, groupId);
+            if (group && group.type === 'group') {
+                group.groupOrientation = group.groupOrientation === 'vertical' ? 'horizontal' : 'vertical';
+                refreshView(true);
+            }
+        }
+
+        function cycleGroupSort(groupId) {
+            const group = findNode(currentData, groupId);
+            if (group && group.type === 'group') {
+                const modes = ['none', 'name', 'role'];
+                const currentIdx = modes.indexOf(group.groupSortBy || 'none');
+                group.groupSortBy = modes[(currentIdx + 1) % modes.length];
+                refreshView(true);
+            }
+        }
+
+        function handleCardClick(event, nodeId) {
+            event.stopPropagation();
+            currentFocusedId = nodeId;
+            highlightFocusedNode(true);
+            if (editMode) return;
+            showDetailsPopup(nodeId);
+        }
+
+        function showDetailsPopup(nodeId) {
+            const node = findNode(currentData, nodeId);
+            if (!node) return;
+
+            currentPopupNodeId = nodeId;
+
+            const modalIcon = document.getElementById('popupModalIcon');
+            const modalBadge = document.getElementById('popupModalBadge');
+            const modalTitle = document.getElementById('popupModalTitle');
+            const modalDescription = document.getElementById('popupModalDescription');
+            const modalMembers = document.getElementById('popupModalMembers');
+            const blankBtn = document.getElementById('popupBlankCustomBtn');
+
+            const defaultIcon = node.type === 'section' ? 'fa-building-user' : node.type === 'group' ? 'fa-users' : node.type === 'blank' ? 'fa-square-dash' : 'fa-user';
+            modalIcon.innerHTML = `<i class="fa-solid ${node.icon || defaultIcon}"></i>`;
+            modalBadge.innerText = node.levelTitle || (node.type === 'blank' ? 'TARJETA EN BLANCO' : 'DETALLE DE TARJETA');
+            modalTitle.innerText = node.name || 'Sin Título';
+            modalDescription.innerText = node.description || 'Sin descripción asignada.';
+
+            modalMembers.innerHTML = `
+                <div class="flex items-center space-x-2 text-slate-800 font-medium">
+                    <i class="fa-solid fa-briefcase text-indigo-600 text-xs"></i>
+                    <span>Cargo / Puesto: <b>${node.role || 'No especificado'}</b></span>
+                </div>
+                <div class="flex items-center space-x-2 text-slate-800 font-medium">
+                    <i class="fa-solid fa-building text-indigo-600 text-xs"></i>
+                    <span>Nivel Institucional: <b>${node.institutionalLevel || 'No especificado'}</b></span>
+                </div>
+            `;
+
+            if (node.type === 'group' && node.members && node.members.length > 0) {
+                const membersHeader = document.createElement('div');
+                membersHeader.className = "pt-2 border-t font-semibold text-xs text-indigo-900";
+                membersHeader.innerText = "Integrantes del Grupo:";
+                modalMembers.appendChild(membersHeader);
+
+                let sorted = node.members;
+                if (node.groupSortBy && node.groupSortBy !== 'none') {
+                    sorted = sortMembers(node.members, node.groupSortBy);
+                }
+
+                sorted.forEach(m => {
+                    const mDiv = document.createElement('div');
+                    mDiv.className = "flex items-center space-x-2 text-xs text-slate-700 pl-2";
+                    mDiv.innerHTML = `<i class="fa-solid fa-user text-sky-500"></i><span>${m.name} (${m.role})</span>`;
+                    modalMembers.appendChild(mDiv);
+                });
+            }
+
+            if (editMode) {
+                blankBtn.classList.remove('hidden');
+            } else {
+                blankBtn.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('detailsPopupModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('detailsModalCard').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeDetailsPopup() {
+            const modal = document.getElementById('detailsPopupModal');
+            modal.classList.add('opacity-0');
+            document.getElementById('detailsModalCard').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                currentPopupNodeId = null;
+            }, 300);
+        }
+
+        function openEditModalFromPopup() {
+            closeDetailsPopup();
+            if (currentPopupNodeId) {
+                openEditModal(currentPopupNodeId);
+            }
+        }
+
+        function openTitleEditModal() {
+            document.getElementById('chartTitleInput').value = currentData ? (currentData.chartTitle || '') : '';
+            document.getElementById('titleModal').classList.remove('hidden');
+        }
+
+        function saveChartTitle() {
+            const val = document.getElementById('chartTitleInput').value.trim();
+            if (currentData) {
+                currentData.chartTitle = val || "Organigrama Interactivo del Proyecto";
+            }
+            document.getElementById('titleModal').classList.add('hidden');
+            refreshView(true);
+        }
+
+        document.getElementById('closeTitleModalBtn').addEventListener('click', () => document.getElementById('titleModal').classList.add('hidden'));
+        document.getElementById('cancelTitleModalBtn').addEventListener('click', () => document.getElementById('titleModal').classList.add('hidden'));
+
+        function togglePresentationMode() {
+            isPresentationMode = !isPresentationMode;
+            if (isPresentationMode) {
+                document.body.classList.add('presentation-mode');
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
+                // Ensure top/root node is automatically selected and highlighted in Presentation Mode
+                if (currentData) {
+                    currentFocusedId = currentData.id;
+                }
+            } else {
+                document.body.classList.remove('presentation-mode');
+                if (document.exitFullscreen && document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            }
+            refreshView(true);
+            highlightFocusedNode(false);
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isPresentationMode) {
+                isPresentationMode = false;
+                document.body.classList.remove('presentation-mode');
+                refreshView(true);
+            }
+        });
+
+        /* Spatial Navigation Logic across Hierarchy Levels & Groups */
+        function navigateSpatial(direction) {
+            // Auto-select root node if no card is currently focused when pressing arrow keys
+            if (!currentFocusedId) {
+                if (currentData) {
+                    currentFocusedId = currentData.id;
+                    highlightFocusedNode();
+                }
+                return;
+            }
+
+            const currNode = findNode(currentData, currentFocusedId);
+            const parentNode = findParentNode(currentData, currentFocusedId);
+
+            if (direction === 'left' || direction === 'right') {
+                let siblings = [];
+                // Check if current node is inside a group
+                if (parentNode && parentNode.members && parentNode.members.some(m => m.id === currentFocusedId)) {
+                    siblings = parentNode.members;
+                } else if (parentNode && parentNode.children) {
+                    siblings = parentNode.children;
+                }
+
+                if (siblings.length > 1) {
+                    const idx = siblings.findIndex(s => s.id === currentFocusedId);
+                    if (idx !== -1) {
+                        let nextIdx = direction === 'right' ? idx + 1 : idx - 1;
+                        if (nextIdx >= 0 && nextIdx < siblings.length) {
+                            currentFocusedId = siblings[nextIdx].id;
+                        }
+                    }
+                }
+            } else if (direction === 'down') {
+                if (currNode) {
+                    if (currNode.type === 'group' && currNode.members && currNode.members.length > 0) {
+                        currentFocusedId = currNode.members[0].id;
+                    } else if (currNode.children && currNode.children.length > 0) {
+                        currentFocusedId = currNode.children[0].id;
+                    } else if (parentNode && parentNode.type === 'group' && parentNode.children && parentNode.children.length > 0) {
+                        // Exit from a group member directly to the group's children below
+                        currentFocusedId = parentNode.children[0].id;
+                    }
+                }
+            } else if (direction === 'up') {
+                if (parentNode) {
+                    currentFocusedId = parentNode.id;
+                }
+            }
+
+            highlightFocusedNode();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') {
+                return;
+            }
+
+            const popupOpen = !document.getElementById('detailsPopupModal').classList.contains('hidden');
+
+            // Handle Zoom IN and Zoom OUT using + and - keys (and Numpad equivalents)
+            if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
+                e.preventDefault();
+                zoomIn();
+                return;
+            }
+
+            if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+                e.preventDefault();
+                zoomOut();
+                return;
+            }
+
+            if (e.key === 'f' || e.key === 'F') {
+                togglePresentationMode();
+                return;
+            }
+
+            if (e.key === 'l' || e.key === 'L') {
+                toggleViewMode();
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                if (popupOpen) {
+                    closeDetailsPopup();
+                } else if (currentFocusedId) {
+                    showDetailsPopup(currentFocusedId);
+                }
+                return;
+            }
+
+            if (e.key === 'Escape') {
+                if (popupOpen) {
+                    closeDetailsPopup();
+                    return;
+                }
+                if (isPresentationMode) {
+                    togglePresentationMode();
+                    return;
+                }
+            }
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (popupOpen) closeDetailsPopup();
+                navigateSpatial('left');
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (popupOpen) closeDetailsPopup();
+                navigateSpatial('right');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (popupOpen) closeDetailsPopup();
+                navigateSpatial('up');
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (popupOpen) closeDetailsPopup();
+                navigateSpatial('down');
+            }
+        });
+
+        function zoomIn() {
+            if (currentZoom < 1.8) {
+                currentZoom += 0.1;
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.25) {
+                currentZoom -= 0.1;
+                updateZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            updateZoom();
+        }
+
+        function updateZoom() {
+            const canvas = document.getElementById('chartCanvas');
+            canvas.style.transform = `scale(${currentZoom})`;
+        }
+
+        function toggleViewMode() {
+            isListView = !isListView;
+            const canvas = document.getElementById('chartCanvas');
+            const listView = document.getElementById('listViewContainer');
+            const btnText = document.getElementById('viewModeText');
+            const btnIcon = document.querySelector('#viewModeBtn i');
+
+            if (isListView) {
+                canvas.classList.add('hidden');
+                listView.classList.remove('hidden');
+                btnText.innerText = "Vista de Organigrama";
+                btnIcon.className = "fa-solid fa-sitemap";
+                populateDetailedList();
+            } else {
+                listView.classList.add('hidden');
+                canvas.classList.remove('hidden');
+                btnText.innerText = "Vista de Lista / Detalles";
+                btnIcon.className = "fa-solid fa-list-tree";
+            }
+        }
+
+        function populateDetailedList() {
+            const container = document.getElementById('detailedListContent');
+            container.innerHTML = '';
+
+            const allNodes = [];
+            function collectAll(n) {
+                if (!n) return;
+                allNodes.push(n);
+                if (n.members) n.members.forEach(m => allNodes.push(m));
+                if (n.children) n.children.forEach(c => collectAll(c));
+            }
+            collectAll(currentData);
+
+            allNodes.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer';
+                div.onclick = () => showDetailsPopup(item.id);
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">${item.levelTitle || 'Módulo'}</span>
+                        <button onclick="showDetailsPopup('${item.id}')" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center space-x-1">
+                            <span>Ver detalles</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                        <i class="fa-solid ${item.icon || 'fa-shield-halved'} text-indigo-500 text-sm"></i>
+                        ${item.name}
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-1">${item.description || item.role || 'Sin descripción'}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function promptAddChild(parentId) {
+            selectedParentToAdd = parentId;
+            addTypeModal.classList.remove('hidden');
+        }
+
+        function promptAddGroupMember(groupId) {
+            const group = findNode(currentData, groupId);
+            if (group) {
+                group.members = group.members || [];
+                const newMemberId = "ind-" + Date.now();
+                group.members.push({
+                    id: newMemberId,
+                    type: "individual",
+                    icon: "fa-user",
+                    levelTitle: "NIVEL • INTEGRANTE DE GRUPO",
+                    name: "Nuevo Colaborador",
+                    role: "Integrante de Grupo",
+                    institutionalLevel: "Sucursal / Operativa",
+                    description: "Integrante registrado en grupo de trabajo.",
+                    photo: ""
+                });
+                currentFocusedId = newMemberId;
+                refreshView(true);
+            }
+        }
+
+        document.getElementById('closeAddTypeBtn').addEventListener('click', () => {
+            addTypeModal.classList.add('hidden');
+        });
+
+        function confirmAddChild(type) {
+            addTypeModal.classList.add('hidden');
+
+            const newNodeId = (type === 'section' ? 'sec-' : type === 'group' ? 'grp-' : type === 'blank' ? 'blk-' : 'ind-') + Date.now();
+            const newNode = {
+                id: newNodeId,
+                type: type,
+                icon: type === 'section' ? 'fa-building-user' : type === 'group' ? 'fa-users' : type === 'blank' ? 'fa-square-dash' : 'fa-user',
+                levelTitle: type === 'section' ? "NIVEL • SECCIÓN / COMITÉ" : type === 'group' ? "NIVEL • GRUPO DE TRABAJO" : type === 'blank' ? "NIVEL • PUESTO EN BLANCO" : "NIVEL • CARGO INDIVIDUAL",
+                name: type === 'section' ? "Nueva Sección" : type === 'group' ? "Nuevo Grupo de Trabajo" : type === 'blank' ? "Puesto Vacante / En Blanco" : "Nuevo Integrante",
+                role: type === 'section' ? "Comité Ejecutivo" : type === 'group' ? "Área Funcional" : type === 'blank' ? "Por Definir" : "Cargo / Puesto",
+                institutionalLevel: "Sucursal / Oficina Central",
+                description: "Descripción detallada por configurar...",
+                photo: "",
+                children: []
+            };
+
+            if (type === 'group') {
+                newNode.members = [];
+                newNode.groupOrientation = "horizontal";
+                newNode.groupSortBy = "none";
+            }
+
+            if (!currentData || Object.keys(currentData).length === 0) {
+                currentData = newNode;
+            } else {
+                const parent = findNode(currentData, selectedParentToAdd);
+                if (parent) {
+                    parent.children = parent.children || [];
+                    parent.children.push(newNode);
+                }
+            }
+            currentFocusedId = newNodeId;
+            refreshView(true);
+        }
+
+        function openEditModal(id) {
+            activeNodeId = id;
+            const node = findNode(currentData, id);
+            if (!node) return;
+
+            nodeTypeSelect.value = node.type || 'individual';
+            nodeIconSelect.value = node.icon || '';
+
+            const groupSec = document.getElementById('groupSettingsSection');
+            if (node.type === 'group') {
+                groupSec.classList.remove('hidden');
+                document.getElementById('nodeGroupOrientation').value = node.groupOrientation || 'horizontal';
+                document.getElementById('nodeGroupSortBy').value = node.groupSortBy || 'none';
+            } else {
+                groupSec.classList.add('hidden');
+            }
+
+            const allNodes = getAllNodesList(currentData);
+            nodeParentSelect.innerHTML = '';
+            
+            if (currentData && node.id === currentData.id) {
+                parentSelectorGroup.classList.add('hidden');
+            } else {
+                parentSelectorGroup.classList.remove('hidden');
+                const currentParent = findParentNode(currentData, node.id);
+                allNodes.forEach(n => {
+                    if (n.id !== node.id) {
+                        const option = document.createElement('option');
+                        option.value = n.id;
+                        option.textContent = `[${n.type.toUpperCase()}] ${n.name}`;
+                        if (currentParent && currentParent.id === n.id) option.selected = true;
+                        nodeParentSelect.appendChild(option);
+                    }
+                });
+            }
+
+            document.getElementById('nodeLevelTitle').value = node.levelTitle || '';
+            document.getElementById('nodeName').value = node.name || '';
+            document.getElementById('nodeRole').value = node.role || '';
+            document.getElementById('nodeInstLevel').value = node.institutionalLevel || '';
+            document.getElementById('nodeDescription').value = node.description || '';
+
+            const photoField = document.getElementById('photoField');
+            if (node.type === 'individual') {
+                photoField.classList.remove('hidden');
+            } else {
+                photoField.classList.add('hidden');
+            }
+
+            nodeModal.classList.remove('hidden');
+        }
+
+        function deleteNode(id) {
+            if (currentData && currentData.id === id) {
+                currentData = null;
+                refreshView(true);
+                return;
+            }
+
+            function removeRecursive(node, targetId) {
+                if (node.members) {
+                    const idx = node.members.findIndex(m => m.id === targetId);
+                    if (idx !== -1) {
+                        node.members.splice(idx, 1);
+                        return true;
+                    }
+                }
+                if (!node.children) return false;
+                const index = node.children.findIndex(c => c.id === targetId);
+                if (index !== -1) {
+                    node.children.splice(index, 1);
+                    return true;
+                }
+                return node.children.some(child => removeRecursive(child, targetId));
+            }
+
+            removeRecursive(currentData, id);
+            refreshView(true);
+        }
+
+        nodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const node = findNode(currentData, activeNodeId);
+            if (!node) return;
+
+            node.type = nodeTypeSelect.value;
+            node.icon = nodeIconSelect.value;
+
+            if (node.type === 'group') {
+                node.groupOrientation = document.getElementById('nodeGroupOrientation').value;
+                node.groupSortBy = document.getElementById('nodeGroupSortBy').value;
+            }
+
+            if (currentData && node.id !== currentData.id && nodeParentSelect.value) {
+                const newParentId = nodeParentSelect.value;
+                const currentParent = findParentNode(currentData, node.id);
+                if (currentParent && currentParent.children) {
+                    const index = currentParent.children.findIndex(c => c.id === node.id);
+                    if (index !== -1) currentParent.children.splice(index, 1);
+                }
+                
+                const newParent = findNode(currentData, newParentId);
+                if (newParent) {
+                    newParent.children = newParent.children || [];
+                    newParent.children.push(node);
+                }
+            }
+
+            node.levelTitle = document.getElementById('nodeLevelTitle').value;
+            node.name = document.getElementById('nodeName').value;
+            node.role = document.getElementById('nodeRole').value;
+            node.institutionalLevel = document.getElementById('nodeInstLevel').value;
+            node.description = document.getElementById('nodeDescription').value;
+
+            const photoInput = document.getElementById('nodePhotoInput');
+            if (node.type === 'individual' && photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    node.photo = evt.target.result;
+                    nodeModal.classList.add('hidden');
+                    refreshView(true);
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+            } else {
+                nodeModal.classList.add('hidden');
+                refreshView(true);
+            }
+        });
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => nodeModal.classList.add('hidden'));
+        document.getElementById('cancelModalBtn').addEventListener('click', () => nodeModal.classList.add('hidden'));
+
+        document.getElementById('btnInfo').addEventListener('click', () => infoModal.classList.remove('hidden'));
+        document.getElementById('closeInfoBtn').addEventListener('click', () => infoModal.classList.add('hidden'));
+
+        document.getElementById('btnGuardar').addEventListener('click', () => {
+            localStorage.setItem('organigramData', JSON.stringify(currentData));
+            showNotification("Organigrama guardado localmente.");
+        });
+
+        document.getElementById('btnEditar').addEventListener('click', () => {
+            editMode = !editMode;
+            const statusSpan = document.getElementById('editModeStatus');
+            const btn = document.getElementById('btnEditar');
+            if (editMode) {
+                statusSpan.innerText = "ACTIVADO";
+                btn.classList.add('bg-amber-600');
+            } else {
+                statusSpan.innerText = "DESACTIVADO";
+                btn.classList.remove('bg-amber-600');
+            }
+            refreshView(true);
+        });
+
+        document.getElementById('btnDescargar').addEventListener('click', () => {
+            const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", jsonStr);
+            downloadAnchor.setAttribute("download", "organigrama.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        document.getElementById('btnCargar').addEventListener('click', () => fileLoaderInput.click());
+
+        fileLoaderInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    currentData = JSON.parse(evt.target.result);
+                    refreshView();
+                    showNotification("Organigrama cargado con éxito.");
+                } catch(err) {
+                    showNotification("Error al leer el archivo JSON.");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('btnRestaurar').addEventListener('click', () => {
+            currentData = JSON.parse(JSON.stringify(defaultData));
+            refreshView();
+            showNotification("Organigrama restaurado al estado inicial.");
+        });
+
+        document.getElementById('btnBorrar').addEventListener('click', () => {
+            currentData = null;
+            refreshView();
+            showNotification("Jerarquía eliminada por completo.");
+        });
+
+        function showNotification(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-5 right-5 bg-slate-900/90 backdrop-blur-sm text-white text-xs px-4 py-2.5 rounded-xl shadow-lg z-50 transition-opacity duration-300 border border-slate-700 flex items-center gap-2";
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        window.onload = function() {
+            refreshView();
+            gsap.from("#treeContainer", {
+                duration: 0.8,
+                opacity: 0,
+                y: 20,
+                ease: "power2.out"
+            });
+        };
+    </script>
+</body>
+</html>
